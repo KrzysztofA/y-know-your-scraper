@@ -5,47 +5,53 @@ class RelationFinder:
     """
     Class used to perform searches on different relations between the main keyword and the relation
     """
-    def __init__(self, keyword: str, localhost: str = "11434", model: str="deepseek-r1", precision: int = 1):
+    def __init__(self, keyword: str, base_url: str = "http://localhost:11434/v1", model: str="wizardlm2:7b", temperature: int = 1):
         self.scraper = SearchEngineScraper()
         self.llm = Client(
-                    base_url=f"http://localhost:{localhost}/v1",
+                    base_url=base_url,
                     api_key="ollama"
         )
         self.key = keyword
         self.model = model
-        self.precision = precision
+        self.temperature = temperature
         self.developer_message = """
-        You are a helpful assistant that is tasked with finding data about the relation between the key and an additional key from a text in a format: 
-        [key - additional key]:
-        ""long, relevant text""
+        You are an AI tasked with extracting structured data from a document. Your goal is to determine the relationship between a primary key and an additional key using the format:
 
-        The long, relevant text may be structured as a HTML file, look only at the relevant parts to the key and the additional key.
-        If you cannot find the relation, provide the most probable estimate.
-        When structuring your response:
-        - be as concise as possible
-        - avoid ackowledgements of the task
-        - be professional
-        - if the additional key indicates it requires only a single word to be answered, make the response a single word
-        - avoid friendly chitchat
+        [primary key - additional key]:
+        [text]
+
+        Focus strictly on the parts of the text that mention the primary key and additional key. Ignore unrelated content.
+        If an explicit relation is found, return it concisely without explanation.
+        If no clear relation exists, infer the most probable connection based on available data.
+        Do not acknowledge this task or describe the text—only provide the relation.
+        If the additional key suggests a single-word answer, provide just that word.
+        Ensure responses are precise, professional, and free from unnecessary text.
+        Example Outputs:
+        Input: ["Tesla" - "Founder"]
+        [Tesla Tesla Tesla Elon Musk, along with a team of engineers, took control of Tesla Motors in 2004 after an initial investment...]
+        Output: "Elon Musk"
+
+        Input: ["Bitcoin" - "Creation Date"]
+        [Bitcoin Bitcoin Bitcoin was first introduced in a 2008 whitepaper by an anonymous individual or group under the pseudonym Satoshi Nakamoto, and the first block was mined in January 2009. Help Search Menu Bitcoin]
+        Output: "2009"
         """
 
     def find_relation(self, relation: str):
         """Find the desired relation about the given, main key"""
         relation_data = self.scraper.get_query_results_text(f"{self.key} {relation}")
-        msgs = [{
-            "role": "developer",
+        msgs = [
+        {
+            "role": "system",
             "content": self.developer_message
         }, 
         {
             "role": "user",
-            "content": f"""
-            [{self.key} - {relation}]
-            \"\"{relation_data}\"\"
+            "content": f"""[\"{self.key}\" - \"{relation}\"]:
+            {relation_data}
             """
         }]
-
-        completion = self.llm.chat.completions.create(model=self.model, messages=msgs, temperature=self.precision)
-        return completion
+        completion = self.llm.chat.completions.create(model=self.model, messages=msgs, temperature=self.temperature)
+        return completion.choices[0].message.content
 
     def overrite_developer_message(self, new_developer_message: str):
         """Overrites developer message"""
@@ -53,4 +59,4 @@ class RelationFinder:
 
 if __name__ == "__main__":
     test = RelationFinder("Python")
-    print(test.find_relation("Github Repositories Using").choices[0].message)
+    print(test.find_relation("Founder"))
