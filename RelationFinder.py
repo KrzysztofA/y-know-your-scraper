@@ -1,6 +1,8 @@
 from SearchEngineScraper import SearchEngineScraper 
 from openai import Client
 import json
+import re 
+
 
 class RelationFinder:
     """
@@ -38,13 +40,15 @@ class RelationFinder:
         return completion.choices[0].message.content if not self.reasoning_model else completion.choices[0].message.content.split("</think>")[1]
 
     def find_relation_dictionary(self, relation: str):
+        """
+        Find the relation to the keyword and extract the data directly to a Python dictionary
+        """
         json_text = self.find_relation_json_text(relation)
-        json_text = json_text.strip()
-        json_text = json_text.replace("```json", "")
-        json_text = json_text.replace("```", "")
-        dictionary = json.loads(json_text)
+        json_match = re.search(r'```json\s*(.*?)\s*```', json_text, re.DOTALL)
+        dictionary = json.loads(json_match.group(1))
         return dictionary
 
 if __name__ == "__main__":
     test = RelationFinder("Cynexis Insight")
-    print(test.find_relation_dictionary("Revenue"))
+    print(test.find_relation_dictionary("Founders"))
+    
