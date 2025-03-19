@@ -110,11 +110,15 @@ class SearchEngineScraper:
         # Get all the paragraphs from a page
         relevant_text = []
         for url in results.keys():
-            html = requests.get(url).text
-            soup = BeautifulSoup(html, "lxml")
-            soup = soup.find_all('article')
-            relevant_text.extend(soup)
-        
+            try:
+                html = requests.get(url).text
+                soup = BeautifulSoup(html, "lxml")
+                soup = soup.find_all('article')
+                relevant_text.extend(soup)
+            except:
+                print(f"Couldn't get {url}, continuing")
+                # TODO Try to get the website with selenium
+
         # Extract the text from all the paragraphs
         texts = []
         for text in relevant_text:
@@ -125,7 +129,7 @@ class SearchEngineScraper:
 
 if __name__ == '__main__':
     scraper = SearchEngineScraper()
-    print(scraper.search('javascript'))
-    print(scraper.get_query_results_text('python - founder'))
-    print(scraper.search_multiple(['python', 'c++']))
-    scraper.search_multiple_to_JSON(['python', 'c#'], 'test.json')
+#    print(scraper.search('javascript'))
+    print(scraper.get_query_results_text('FuturAI Industry'))
+#    print(scraper.search_multiple(['python', 'c++']))
+#    scraper.search_multiple_to_JSON(['python', 'c#'], 'test.json')
