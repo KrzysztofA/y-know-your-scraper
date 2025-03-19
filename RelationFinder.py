@@ -1,11 +1,12 @@
 from SearchEngineScraper import SearchEngineScraper 
 from openai import Client
+import json
 
 class RelationFinder:
     """
     Class used to perform searches on different relations between the main keyword and the relation
     """
-    def __init__(self, keyword: str, base_url: str = "http://localhost:11434/v1", model: str="phi4", temperature: int = 0):
+    def __init__(self, keyword: str, base_url: str = "http://localhost:11434/v1", model: str="phi4", temperature: int = 0, reasoning_model=False):
         self.scraper = SearchEngineScraper()
         self.llm = Client(
                     base_url=base_url,
@@ -14,8 +15,9 @@ class RelationFinder:
         self.key = keyword
         self.model = model
         self.temperature = temperature
+        self.reasoning_model = reasoning_model
 
-    def find_relation(self, relation: str):
+    def find_relation_json_text(self, relation: str):
         """Find the desired relation about the given, main key"""
         relation_data = self.scraper.get_query_results_text(f"{self.key} {relation}")
         msgs = [
@@ -28,12 +30,21 @@ class RelationFinder:
                 "{relation}": "answer"
             }}.
 
-            Be as concise as possible, avoid any irrelevant data. Aim to deliver only the asked data point ({relation}).
+            Be as concise as possible, avoid any irrelevant data. Deliver only the asked data point ({relation}) or null in a json format.
+            Never include any explanation or anything besides the json.
             """
         }]
         completion = self.llm.chat.completions.create(model=self.model, messages=msgs, temperature=self.temperature)
-        return completion.choices[0].message.content
+        return completion.choices[0].message.content if not self.reasoning_model else completion.choices[0].message.content.split("</think>")[1]
+
+    def find_relation_dictionary(self, relation: str):
+        json_text = self.find_relation_json_text(relation)
+        json_text = json_text.strip()
+        json_text = json_text.replace("```json", "")
+        json_text = json_text.replace("```", "")
+        dictionary = json.loads(json_text)
+        return dictionary
 
 if __name__ == "__main__":
-    test = RelationFinder("Python")
-    print(test.find_relation("Founder"))
+    test = RelationFinder("Cynexis Insight")
+    print(test.find_relation_dictionary("Revenue"))

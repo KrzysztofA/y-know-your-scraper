@@ -107,17 +107,24 @@ class SearchEngineScraper:
         # Search the query
         results = self.search(query)
 
-        # Get all the paragraphs from a page
+        # Get all the articles from a page
         relevant_text = []
         for url in results.keys():
             try:
+                # Use beautiful soup to get the text
                 html = requests.get(url).text
                 soup = BeautifulSoup(html, "lxml")
                 soup = soup.find_all('article')
                 relevant_text.extend(soup)
             except:
-                print(f"Couldn't get {url}, continuing")
-                # TODO Try to get the website with selenium
+                # Try using selenium to get the text
+                print(f"Couldn't get {url}, continuing with selenium")
+                self.browser.get(url)
+                self.browser.implicitly_wait(10)
+                elems = self.browser.find_elements(By.TAG_NAME, "article")
+                for el in elems:
+                    relevant_text.append(el.text)
+
 
         # Extract the text from all the paragraphs
         texts = []
