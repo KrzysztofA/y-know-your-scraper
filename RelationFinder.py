@@ -1,4 +1,5 @@
-from SearchEngineScraper import SearchEngineScraper 
+from SearchEngineScraper import SearchEngineScraper
+from nltk import tokenize
 from openai import Client
 import json
 import re 
@@ -19,8 +20,31 @@ class RelationFinder:
         self.temperature = temperature
         self.reasoning_model = reasoning_model
 
+    def __tokenize_text(self):
+        """Tokenize given text and return the number of tokens"""
+        pass
+
+    def find_verbose_relation(self, relation):
+        """Find desired relation about the given main key, and build an article explaining the relation"""
+        relation_data = self.scraper.get_query_results_text(f"{self.key} {relation}")
+        main_msg = f"""Extract the following data point: \"{relation}\", about the: \"{self.key}\"\n
+                       From this pile of text:\n
+                       {relation_data},
+                       prepare a verbose and detailed article on \"{relation}\" for a business report with as many details as you can find in the given text about the \"{self.key}.
+                       Make sure the article is professional. Don't include any preambles, nor any acknowledgements or anything besides the article.
+                    """
+        msgs = [
+        {
+            "role": "user",
+            "content": main_msg
+        }]
+        completion = self.llm.chat.completions.create(model=self.model, messages=msgs, temperature=self.temperature)
+        return completion.choices[0].message.content if not self.reasoning_model else completion.choices[0].message.content.split("</think>")[1]
+
+
+
     def find_relation_json_text(self, relation: str):
-        """Find the desired relation about the given, main key"""
+        """Find the desired relation about the given, main key, extracted as a concise message in a json format"""
         relation_data = self.scraper.get_query_results_text(f"{self.key} {relation}")
 
         main_msg = f"""Extract the following data point: \"{relation}\", about the: \"{self.key}\"\n
@@ -30,7 +54,7 @@ class RelationFinder:
                            "{relation}": "answer"
                        }}.
 
-                       Be as concise as possible, avoid any irrelevant data. Deliver only the asked data point ({relation}) or null in a json format.
+                       Be as concise as possible, avoid any irrelevant data. Deliver only the asked data point ({relation}) or NULL in a json format.
                        Never include any explanation or anything besides the json.
                     """
 
@@ -61,5 +85,4 @@ class RelationFinder:
 
 if __name__ == "__main__":
     test = RelationFinder("Anthropic PBC", model="phi4")
-    print(test.find_relation_dictionary("Competitor Analysis"))
-    print(test.find_relation_dictionary("Media Mentions"))
+    print(test.find_verbose_relation("Competitor Analysis"))
