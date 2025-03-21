@@ -9,7 +9,7 @@ class DatasetAIParser:
         self.data = pd.read_csv(file_path)
         self.file_path = file_path
 
-    def fill_missing_data_with_ai_at_index(self, index:int, model="phi4"):
+    def fill_missing_data_with_ai_at_index(self, index:int, model="phi4", max_tokens: int = 10000):
         """
         Fills the missing data using provided llm and appends this data to the given CSV TODO
         """
@@ -28,7 +28,7 @@ class DatasetAIParser:
                 try:
                     column = self.data.columns[i + 1]
                     print(f"Starting scraping null value {column} at index {i} for a company {company}")
-                    data_scraped = company_relation_finder.find_relation_dictionary(column)
+                    data_scraped = company_relation_finder.find_relation_dictionary(column, True, max_tokens)
                     null_data = data_scraped[company][column]
                     self.data.iloc[index, i+1] = self.data.iloc[index, i+1].astype(str)
                     self.data.iloc[index, i+1] = str(null_data)
@@ -44,5 +44,5 @@ class DatasetAIParser:
 
 if __name__ == "__main__":
     data_parser = DatasetAIParser("knowYourAi - Company Details.csv")
-    data_parser.fill_missing_data_with_ai_at_index(0)
+    data_parser.fill_missing_data_with_ai_at_index(0, model="llama3.1")
     data_parser.finish_operations()

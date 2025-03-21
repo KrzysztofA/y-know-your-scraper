@@ -49,7 +49,7 @@ class RelationFinder:
     
     def __reduce_text(self, text: str, max_tokens: int):
         """Reduce text so it contains a maximum number of tokens"""
-        
+        # TODO remove recursion and try to make a list        
         if self.__tokenize_text(text) < max_tokens:
             return text
 
