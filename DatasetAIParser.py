@@ -44,5 +44,5 @@ class DatasetAIParser:
 
 if __name__ == "__main__":
     data_parser = DatasetAIParser("knowYourAi - Company Details.csv")
-    data_parser.fill_missing_data_with_ai_at_index(0, model="llama3.1")
+    data_parser.fill_missing_data_with_ai_at_index(0, model="llama2")
     data_parser.finish_operations()

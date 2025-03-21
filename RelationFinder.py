@@ -145,5 +145,6 @@ class RelationFinder:
         return dictionary
 
 if __name__ == "__main__":
-    test = RelationFinder("Anthropic PBC", model="llama3.1")
+    # nltk.download() # Only run this on the first run, and then comment it out
+    test = RelationFinder("Anthropic PBC", model="llama2")
     print(test.find_relation_dictionary("Known Competitors", True, 10000))
